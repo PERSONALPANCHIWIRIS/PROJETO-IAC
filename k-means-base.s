@@ -106,6 +106,7 @@ printPoint:
 ###mudar_k
 #muda o valor do k a k=1
 mudar_k:
+    j if_mudar_k
     resto:
     	addi sp, sp, -4
     	sw a0, 0(sp)
@@ -114,6 +115,7 @@ mudar_k:
         lw a0, 0(sp)
         addi sp, sp, 4
         jr ra
+    if_mudar_k:
     bne, t0, t1, resto
     jr ra
 
