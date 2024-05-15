@@ -29,8 +29,8 @@
 #points:      .word 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7 8,8
 
 #Input B - Cruz
-n_points:    .word 5
-points:     .word 4,2, 5,1, 5,2, 5,3 6,2
+#n_points:    .word 5
+#points:     .word 4,2, 5,1, 5,2, 5,3 6,2
 
 #Input C
 #n_points:    .word 23
@@ -106,17 +106,18 @@ printPoint:
 ###mudar_k
 #muda o valor do k a k=1
 mudar_k:
-    j if_mudar_k
+    j if_mudar_k #ira verificar a condicao
     resto:
-    	addi sp, sp, -4
-    	sw a0, 0(sp)
-    	la a0, k
-        sw t1, 0(a0)
+    	addi sp, sp, -4 #Aloca espaço para a pilha
+    	sw a0, 0(sp) #guarda o valor do registo a0
+    	la a0, k #o endereço de k fica no registo a0
+        sw t1, 0(a0) #Guarda o valor 1 em k
         lw a0, 0(sp)
-        addi sp, sp, 4
-        jr ra
+        addi sp, sp, 4 #recupera os dados e fecha a pilha
+        jr ra #volta a chamada da funcao
+        
     if_mudar_k:
-    bne, t0, t1, resto
+    bne, t0, t1, resto #se k nao e igual a 1
     jr ra
 
 ### cleanScreen
@@ -125,27 +126,26 @@ mudar_k:
 # Retorno: nenhum
 
 cleanScreen:
-    # POR IMPLEMENTAR (1a parte)
     li t0, 33 #fora do limite
-    li t1, 0
-    lw a2, white
-    addi sp, sp, -4
-    sw ra, 0(sp)
+    li t1, 0 #
+    lw a2, white #guarda a cor branca em a2
+    addi sp, sp, -4 #aloca espaco na pilha
+    sw ra, 0(sp) #guarda o registo de retorno
     ciclo1:
         #volta a inicializar os valores na coluna
         li t2, 0
     ciclo2:
         mv a1, t2
-        mv a0, t1
+        mv a0, t1 #inicializa as variaveis para printPoint
         jal printPoint
-        addi t2, t2, 1
+        addi t2, t2, 1 #itera para a seguinte linha
         bne t2, t0, ciclo2 #limpa os pontos numa coluna
         addi t1, t1, 1 #já foi uma coluna "apagada"
         bne t1, t0, ciclo1 #itera para a proxima coluna
 
     lw ra, 0(sp)
     addi sp, sp, 4   
-    jr ra
+    jr ra #retorna ao ponto de chamada
 
     
 ### printClusters
@@ -155,22 +155,22 @@ cleanScreen:
 
 printClusters:
     # POR IMPLEMENTAR (1a e 2a parte)
-    lw t0, n_points
-    la t1, points
-    la t2, colors
-    lw a2, 0(t2)
-    forClusters:
-        addi sp, sp, -4
-        sw ra, 0(sp)
+    lw t0, n_points # Numero de pontos e carregado para t0
+    la t1, points # Enderco da lista dos pontos e carregado para t1
+    la t2, colors # Enderco da lista das cores dos pontos e carregado para t2
+    lw a2, 0(t2) # Carrega o primeiro elemento da lista das cores para a2
+    addi sp, sp, -4 # Aloca espaco na pilha para armazenar o endereco de retorno 
+    sw ra, 0(sp) # Guarda o endereço de retorno 
+    forClusters:  # Inicio do ciclo que faz print dos clusters
         lw a0, 0(t1) #X
-        addi t1, t1, 4
+        addi t1, t1, 4 # Avanca para a posicao seguinte na lista
         lw a1, 0(t1) #Y
-        jal printPoint
-        lw ra, 0(sp)
-        addi sp, sp, 4
-        addi t1, t1, 4
-        addi t0, t0, -1
+        jal printPoint  # Chama a funcao printPoint para dar print dos pontos
+        addi t1, t1, 4 # Avanca para o ponto seguinte
+        addi t0, t0, -1 # Menos um ponto
         bgt t0, x0, forClusters #continua o ciclo
+        lw ra, 0(sp) #restaura o valor do endereço de retorno
+        addi sp, sp, 4 #fecha a pilha
     jr ra
 
 
@@ -183,20 +183,20 @@ printClusters:
 printCentroids:
     # POR IMPLEMENTAR (1a e 2a parte)
     li t0, 1 #numero de centroids
-    la t1, centroids
-    lw a2, black
+    la t1, centroids # Coloca o array de centroides em t1
+    lw a2, black # Carrega preto para a2
+    addi sp, sp, -4 #aloca espaço
+    sw ra, 0(sp) #guarda o endereco de retorno
     for_centroids:
-        addi sp, sp, -4
-        sw ra, 0(sp)
         lw a0, 0(t1) #X
-        addi t1, t1, 4
+        addi t1, t1, 4 # Avanca para a posicao seguinte na lista
         lw a1, 0(t1) #Y
-        jal printPoint
-        lw ra, 0(sp)
-        addi sp, sp, 4
-        addi t1, t1, 4
-        addi t0, t0, -1
+        jal printPoint #chama a funcao auxiliar 
+        addi t1, t1, 4 # Avanca para o centroide seguinte
+        addi t0, t0, -1  # Retira 1 a contagem de centroides
         bgt t0, x0, forClusters #continua o ciclo
+        lw ra, 0(sp) #restaura o endereco de retorno
+        addi sp, sp, 4 #fecha a pilha
     jr ra
     
 
@@ -207,25 +207,25 @@ printCentroids:
 
 calculateCentroids:
     # POR IMPLEMENTAR (1a e 2a parte)
-    lw a0, n_points
-    la a1, points
+    lw a0, n_points # Carrega numero de pontos para a0
+    la a1, points  # Carrega a lista de pontos para a1
     li t0, 0 #soma X
     li t1, 0 #soma Y
     mv t2, a0
-    for_calcula_centroid:
-        lw s0, 0(a1)
-        add t0, t0, s0
-        lw s0, 4(a1)
-        add t1, t1, s0
-        addi a1, a1, 8
-        addi t2, t2, -1
-        bgt t2, x0, for_calcula_centroid
-        la a1, centroids
-        div t0, t0, a0
-        sw t0, 0(a1)
-        div t1, t1, a0
-        sw t1, 4(a1)
-    jr ra
+    for_calcula_centroid: #loop para calcular os centroides
+        lw s0, 0(a1) # Carrega a coordenda X do ponto atual para s0
+        add t0, t0, s0 #adiciona ao somatorio X
+        lw s0, 4(a1) # Carrega a coordenda Y do ponto atual para s0
+        add t1, t1, s0 #adiciona ao somatorio Y
+        addi a1, a1, 8 # Avança para o ponto seguinte da lista
+        addi t2, t2, -1 # menos um ponto
+        bgt t2, x0, for_calcula_centroid # Se ainda houver pontos por calucular continua o ciclo
+        la a1, centroids #sera alterada na memoria a lista de centroids
+        div t0, t0, a0 # (media de X)
+        sw t0, 0(a1) #guarda na coordenada X do centroid
+        div t1, t1, a0 # (media de Y)
+        sw t1, 4(a1) # guarda na coordenada Y do centroid
+    jr ra #retorna
 
 
 ### mainSingleCluster
@@ -237,70 +237,70 @@ mainSingleCluster:
 
     #1. Coloca k=1 (caso nao esteja a 1)
     # POR IMPLEMENTAR (1a parte)
-    lw t0, k
-    li, t1, 1
-    addi sp, sp, -4
-    sw ra, 0(sp)
-    jal mudar_k
-    lw ra, 0(sp)
-    addi sp, sp, 4
+    lw t0, k  # Carrega o valor de k para t0
+    li, t1, 1 #registo t1 fica com o valor 1
+    addi sp, sp, -4 #Aloca memoria na pilha
+    sw ra, 0(sp) # guarda o endereço de retorno
+    jal mudar_k #chama a funcao auxiliar
+    lw ra, 0(sp) # Restaura o endereco de retorno
+    addi sp, sp, 4 # Desaloca espaco na pilha
  
     #2. cleanScreen
     # POR IMPLEMENTAR (1a parte)
-    addi sp, sp, -16
+    addi sp, sp, -16  # Aloca espaco na pilha
     sw ra, 0(sp)
     sw a2, 4(sp)# guarda na pilha todos os valores
     sw a0, 8(sp)#que serao utilizados na funcao clean
     sw a1, 12(sp)
-    jal cleanScreen
-    lw ra, 0(sp)
+    jal cleanScreen # Chama a função cleanScrean para limpar a tela
+    lw ra, 0(sp) # Restaura os valores guardados na pilha
     lw a2, 4(sp)
     lw a0, 8(sp)
-    lw a1, 12(sp)#recupera os valores
+    lw a1, 12(sp)
     addi sp, sp, 16 #"fecha" a pilha
 
     #3. printClusters
     # POR IMPLEMENTAR (1a parte)
-    addi sp, sp, -16
+    addi sp, sp, -16 # Aloca espaco na pilha
     sw ra, 0(sp)
     sw a2, 4(sp)# guarda na pilha os valores iniciais
-    sw a0, 8(sp)
+    sw a0, 8(sp)# a ser utilizados na funcao printClusters
     sw a1, 12(sp)
-    jal printClusters
+    jal printClusters  # Chama a função printClusters para dar print aos clusters
     lw ra, 0(sp)
     lw a2, 4(sp)
     lw a0, 8(sp)
-    lw a1, 12(sp)#recupera os valores
-    addi sp, sp, 16
+    lw a1, 12(sp)#recupera os valores guardados na pilha
+    addi sp, sp, 16 #desaloca memoria na pilha
     
 
     #4. calculateCentroids
     # POR IMPLEMENTAR (1a parte)
-    addi sp, sp, -16
+    addi sp, sp, -16 # Aloca espaco na pilha
     sw ra, 0(sp)
-    sw a0, 4(sp)
-    sw a1, 8(sp)
+    sw a0, 4(sp) #guarda na pilha os valores iniciais
+    sw a1, 8(sp) # a ser utilizados na funcao calculateCentroids
     sw a2, 12(sp)
-    jal calculateCentroids
+    jal calculateCentroids # chama a funcao
     lw a2, 12(sp)
     lw a1, 8(sp)
     lw a0, 4(sp)
-    lw ra, 0(sp)
-    addi sp, sp, 16
+    lw ra, 0(sp) # Restaura os valores iniciais
+    addi sp, sp, 16 # Desaloca espaco na pilha
     
     #5. printCentroids
     # POR IMPLEMENTAR (1a parte)
-    addi sp, sp, -16
+    addi sp, sp, -16 #Aloca espaco
     sw ra, 0(sp)
     sw a0, 4(sp)
-    sw a1, 8(sp)
-    sw a2, 12(sp)
-    jal printCentroids
+    sw a1, 8(sp)# guarda todos os valores iniciais dos registos
+    sw a2, 12(sp)# a ser manipulados pela funcao
+    jal printCentroids # Chama a função printCentroids para dar print aos centroides
     lw a2, 12(sp)
     lw a1, 8(sp)
     lw a0, 4(sp)
-    lw ra, 0(sp)
-    addi sp, sp, 16
+    lw ra, 0(sp) # Restaura todos os valores
+    addi sp, sp, 16  # Desaloca espaco na pilha
     
     #6. Termina
     jr ra
