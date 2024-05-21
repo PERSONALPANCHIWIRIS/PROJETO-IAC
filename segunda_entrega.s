@@ -311,20 +311,18 @@ mainSingleCluster:
 # a0: distance
 
 manhattanDistance:
-    # POR IMPLEMENTAR (2a parte)
     sub t0, a0, a2 # x0 - y0
-    bgtz t0, x_maior
-    neg t0, t0
+    bgtz t0, x_maior #caso seja um valor positivo, salta ao proximo calculo
+    neg t0, t0 #se é  negativo,  calcula o modulo
     
     x_maior:
     sub t1, a1, a3 # x1 - y1
-    bgtz t1, y_maior
-    neg t1, t1
+    bgtz t1, y_maior #mesma logica para a segunda coordenada
+    neg t1, t1 #caso seja negativo, calcula o modulo
     
     y_maior:
-    add a0, t0, t1
-    nop
-    jr ra
+    add a0, t0, t1 #a0 fica com o valor da distancia calculada
+    jr ra #retorna ao ponto de chamada
 
 
 ### nearestCluster
@@ -335,7 +333,6 @@ manhattanDistance:
 # a0: cluster index
 
 nearestCluster:
-    # POR IMPLEMENTAR (2a parte)
     la a5, centroids
     addi sp, sp, -4
     sw ra, 0(sp) #guarda o endere?o de retorno anterior
@@ -374,7 +371,7 @@ nearestCluster:
             mv a0, t1 #caso terminal
             lw ra, 0(sp) #recupera o endere?o de retorno
             addi sp, sp, 4 #desaloca memoria na pilha
-            jr ra
+            jr ra #volta ao ponto de chamada
 
 
 ### mainKMeans
