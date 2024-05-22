@@ -71,10 +71,10 @@ colors:      .word 0xff0000, 0x00ff00, 0x0000ff  # Cores dos pontos do cluster 0
  
 .text
     # Chama funcao principal da 1a parte do projeto
-    jal mainSingleCluster
+    #jal mainSingleCluster
 
     # Descomentar na 2a parte do projeto:
-    #jal mainKMeans
+    jal mainKMeans
     
     #Termina o programa (chamando chamada sistema)
     li a7, 10
@@ -300,6 +300,51 @@ mainSingleCluster:
     #6. Termina
     jr ra
 
+###initializeSeed
+#Inicializa um valor para a seed baseado nos centroids anteriores
+initializeSeed:
+    la a0, centroids # Carrega o endere?o dos centroids para a0
+    lw t0, k # Carrega o valor de k para t0
+    for_initializerSeed:
+        lw t1, 0(a0) # X
+        lw t2, 4(a0) # Y
+        add t3, t1, t3 # Soma os valores de X e Y
+        add t3, t2, t3 #tudo ? soma geral
+        addi a0, a0, 8 #proximo centroid
+        addi t0, t0, -1
+        bgtz t0, for_initializerSeed #se ainda h? centroids continua o loop
+        jr ra
+
+###initializeCentroids
+#Inicializa os valores dos centroid pseudo-aleatoriamente
+
+initializeCentroids:
+    la a0, centroids  # Carrega o endere?o dos centroids para a0
+    lw t0, k  # Carrega o valor de k para t0
+    addi sp, sp, -12  # Aloca memoria na pilha
+    sw ra, 0(sp)  # Guarda o endere?o de retorno
+    sw a0, 4(sp) 
+    sw t0, 8(sp)  # Guarda os valores a ser alterados em initializeSeed
+    jal initializeSeed
+    lw ra, 0(sp)  
+    lw a0, 4(sp) 
+    lw t0, 8(sp)  # recupera todos os valores
+    addi sp, sp, 12  # Desaloca memoria na pilha
+    li t4, 33  # Define o limite superior para a gera??o pseudo-aleat?ria
+    for_initializeCentroids:
+        lw t1, 0(a0)  # Carrega o valor de X do centroid para t1
+        lw t2, 4(a0)  # Carrega o valor de Y do centroid para t2
+        mul t1, t1, t3
+        mul t2, t2, t3
+        rem t1, t1, t4  # Calcula o resto da divis?o entre o ciclo de clock e o limite superior
+        rem t2, t2, t4 #este resto ser? entre 0 e 31, portanto est? nos limites da LED matrix
+        sw t1, 0(a0)  # Armazena o valor pseudo-aleat?rio no endere?o do centroid
+        sw t2, 4(a0)
+        addi a0, a0, 8  # Avan?a para o pr?ximo centroid
+        addi t0, t0, -1  # Ja foi inicializado um vetor
+        bgtz t0, for_initializeCentroids  # Continua o loop se ainda houver centroids
+    jr ra
+
 
 
 ### manhattanDistance
@@ -313,7 +358,7 @@ mainSingleCluster:
 manhattanDistance:
     sub t0, a0, a2 # x0 - y0
     bgtz t0, x_maior #caso seja um valor positivo, salta ao proximo calculo
-    neg t0, t0 #se é  negativo,  calcula o modulo
+    neg t0, t0 #se ?  negativo,  calcula o modulo
     
     x_maior:
     sub t1, a1, a3 # x1 - y1
