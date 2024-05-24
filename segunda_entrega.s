@@ -303,16 +303,16 @@ mainSingleCluster:
 ###initializeSeed
 #Inicializa um valor para a seed baseado nos centroids anteriores
 initializeSeed:
-    la a0, centroids # Carrega o endere?o dos centroids para a0
-    lw t0, k # Carrega o valor de k para t0
+    la a0, points # Carrega o endere?o dos pontos para a0
+    lw t0, n_points # Carrega o valor de n_points para t0
     for_initializerSeed:
         lw t1, 0(a0) # X
         lw t2, 4(a0) # Y
         add t3, t1, t3 # Soma os valores de X e Y
         add t3, t2, t3 #tudo ? soma geral
-        addi a0, a0, 8 #proximo centroid
+        addi a0, a0, 8 #proximo ponto
         addi t0, t0, -1
-        bgtz t0, for_initializerSeed #se ainda h? centroids continua o loop
+        bgtz t0, for_initializerSeed #se ainda h? pontos continua o loop
         jr ra
 
 ###initializeCentroids
