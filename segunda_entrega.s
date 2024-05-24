@@ -25,16 +25,16 @@
 .data
 
 #Input A - linha inclinada
-n_points:    .word 9
-points:      .word 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7 8,8
+#n_points:    .word 9
+#points:      .word 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7 8,8
 
 #Input B - Cruz
 #n_points:    .word 5
 #points:     .word 4,2, 5,1, 5,2, 5,3 6,2
 
 #Input C
-#n_points:    .word 23
-#points: .word 0,0, 0,1, 0,2, 1,0, 1,1, 1,2, 1,3, 2,0, 2,1, 5,3, 6,2, 6,3, 6,4, 7,2, 7,3, 6,8, 6,9, 7,8, 8,7, 8,8, 8,9, 9,7, 9,8
+n_points:    .word 23
+points: .word 0,0, 0,1, 0,2, 1,0, 1,1, 1,2, 1,3, 2,0, 2,1, 5,3, 6,2, 6,3, 6,4, 7,2, 7,3, 6,8, 6,9, 7,8, 8,7, 8,8, 8,9, 9,7, 9,8
 
 #Input D
 #n_points:    .word 30
@@ -43,17 +43,18 @@ points:      .word 0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6, 7,7 8,8
 
 
 # Valores de centroids e k a usar na 1a parte do projeto:
-centroids:   .word 0,0
-k:           .word 1
+#centroids:   .word 0,0
+#k:           .word 1
 
 # Valores de centroids, k e L a usar na 2a parte do prejeto:
-#centroids:   .word 0,0, 10,0, 0,10
-#k:           .word 3
-#L:           .word 10
+centroids:   .word 0,0, 10,0, 0,10
+k:           .word 3
+L:           .word 10
 
 # Abaixo devem ser declarados o vetor clusters (2a parte) e outras estruturas de dados
 # que o grupo considere necessarias para a solucao:
-#clusters:    
+clusters: .zero 128  
+ultimo_centroid: .word 0,0 0,0 0,0
 
 
 
@@ -154,20 +155,24 @@ cleanScreen:
 # Retorno: nenhum
 
 printClusters:
-    # POR IMPLEMENTAR (1a e 2a parte)
     lw t0, n_points # Numero de pontos e carregado para t0
     la t1, points # Enderco da lista dos pontos e carregado para t1
-    la t2, colors # Enderco da lista das cores dos pontos e carregado para t2
-    lw a2, 0(t2) # Carrega o primeiro elemento da lista das cores para a2
+    la a3, clusters #endere?o do vetor identificador de cluster
     addi sp, sp, -4 # Aloca espaco na pilha para armazenar o endereco de retorno 
     sw ra, 0(sp) # Guarda o endere?o de retorno 
     forClusters:  # Inicio do ciclo que faz print dos clusters
         lw a0, 0(t1) #X
         addi t1, t1, 4 # Avanca para a posicao seguinte na lista
         lw a1, 0(t1) #Y
+        lw t3, 0(a3) #Identificador do primeiro ponto no cluster
+        slli t3, t3, 2 #multiplica por 4
+        la t2, colors # Endereco da lista das cores dos pontos e carregado para t2
+        add t2, t2, t3 #novo indice
+        lw a2, 0(t2) # Carrega a cor para a2
         jal printPoint  # Chama a funcao printPoint para dar print dos pontos
         addi t1, t1, 4 # Avanca para o ponto seguinte
         addi t0, t0, -1 # Menos um ponto
+        addi a3, a3, 4 # Avanca para o identificador de cluster seguinte
         bgt t0, x0, forClusters #continua o ciclo
         lw ra, 0(sp) #restaura o valor do endere?o de retorno
         addi sp, sp, 4 #fecha a pilha
@@ -181,8 +186,7 @@ printClusters:
 # Retorno: nenhum
 
 printCentroids:
-    # POR IMPLEMENTAR (1a e 2a parte)
-    li t0, 1 #numero de centroids
+    li t0, 3 #numero de centroids
     la t1, centroids # Coloca o array de centroides em t1
     lw a2, black # Carrega preto para a2
     addi sp, sp, -4 #aloca espa?o
@@ -194,7 +198,7 @@ printCentroids:
         jal printPoint #chama a funcao auxiliar 
         addi t1, t1, 4 # Avanca para o centroide seguinte
         addi t0, t0, -1  # Retira 1 a contagem de centroides
-        bgt t0, x0, forClusters #continua o ciclo
+        bgt t0, x0, for_centroids #continua o ciclo
         lw ra, 0(sp) #restaura o endereco de retorno
         addi sp, sp, 4 #fecha a pilha
     jr ra
@@ -206,26 +210,50 @@ printCentroids:
 # Retorno: nenhum
 
 calculateCentroids:
-    # POR IMPLEMENTAR (1a e 2a parte)
-    lw a0, n_points # Carrega numero de pontos para a0
-    la a1, points  # Carrega a lista de pontos para a1
-    li t0, 0 #soma X
-    li t1, 0 #soma Y
-    mv t2, a0
-    for_calcula_centroid: #loop para calcular os centroides
+    la a3, centroids #sera alterada na memoria a lista de centroids
+    addi a3, a3, 16 #o primeiro centroid a calcular vai ser o de indice 2
+    li t4, 3 #inicializamos t4 com o valor 3
+    j for_cada_Cluster
+    
+    final_calcula_Centroids:
+        div t0, t0, t3 # (media de X)
+        sw t0, 0(a3) #guarda na coordenada X do centroid
+        div t1, t1, t3 # (media de Y)
+        sw t1, 4(a3) # guarda na coordenada Y do centroid
+        addi a3, a3, -8 #Centroid anterior
+        bgt t4, x0, for_cada_Cluster #quando o indice é zero, para
+        jr ra #retorna
+        
+    
+    adiciona_ponto:
         lw s0, 0(a1) # Carrega a coordenda X do ponto atual para s0
         add t0, t0, s0 #adiciona ao somatorio X
         lw s0, 4(a1) # Carrega a coordenda Y do ponto atual para s0
         add t1, t1, s0 #adiciona ao somatorio Y
+        addi t3, t3, 1 #mais um ponto
         addi a1, a1, 8 # Avan?a para o ponto seguinte da lista
+        addi a2, a2, 4 #seguinte no vetor clusters
         addi t2, t2, -1 # menos um ponto
-        bgt t2, x0, for_calcula_centroid # Se ainda houver pontos por calucular continua o ciclo
-        la a1, centroids #sera alterada na memoria a lista de centroids
-        div t0, t0, a0 # (media de X)
-        sw t0, 0(a1) #guarda na coordenada X do centroid
-        div t1, t1, a0 # (media de Y)
-        sw t1, 4(a1) # guarda na coordenada Y do centroid
-    jr ra #retorna
+        bgt t2, x0, for_calcula_centroid
+        j final_calcula_Centroids
+    
+    for_cada_Cluster:
+        addi t4, t4, -1 #novo indice
+        lw a0, n_points # Carrega numero de pontos para a0
+        la a1, points  # Carrega a lista de pontos para a1
+        li t0, 0 #soma X
+        li t1, 0 #soma Y
+        mv t2, a0
+        li t3, 0 #este registo ira guardar o numero de pontos que pertencem a um mesmo cluster
+        la a2, clusters #endereço do vetor de clusters
+        for_calcula_centroid: #loop para calcular os centroides
+            lw t5, 0(a2) #guarda o identificador do primeiro ponto do vetor clusters
+            beq t4, t5, adiciona_ponto
+            addi a1, a1, 8 # Avan?a para o ponto seguinte da lista
+            addi a2, a2, 4 #seguinte no vetor clusters
+            addi t2, t2, -1 # menos um ponto
+            bgt t2, x0, for_calcula_centroid # Se ainda houver pontos por calucular continua o ciclo
+            j final_calcula_Centroids
 
 
 ### mainSingleCluster
@@ -303,17 +331,11 @@ mainSingleCluster:
 ###initializeSeed
 #Inicializa um valor para a seed baseado nos centroids anteriores
 initializeSeed:
-    la a0, points # Carrega o endere?o dos pontos para a0
-    lw t0, n_points # Carrega o valor de n_points para t0
-    for_initializerSeed:
-        lw t1, 0(a0) # X
-        lw t2, 4(a0) # Y
-        add t3, t1, t3 # Soma os valores de X e Y
-        add t3, t2, t3 #tudo ? soma geral
-        addi a0, a0, 8 #proximo ponto
-        addi t0, t0, -1
-        bgtz t0, for_initializerSeed #se ainda h? pontos continua o loop
-        jr ra
+    li a7, 30 #numero do system call
+    ecall #retorna os milisegundos no registo a0
+    neg a0, a0 #o modulo do valor dado
+    mv t3, a0
+    jr ra #retorna
 
 ###initializeCentroids
 #Inicializa os valores dos centroid pseudo-aleatoriamente
@@ -321,22 +343,24 @@ initializeSeed:
 initializeCentroids:
     la a0, centroids  # Carrega o endere?o dos centroids para a0
     lw t0, k  # Carrega o valor de k para t0
-    addi sp, sp, -12  # Aloca memoria na pilha
+    addi sp, sp, -16  # Aloca memoria na pilha
     sw ra, 0(sp)  # Guarda o endere?o de retorno
     sw a0, 4(sp) 
-    sw t0, 8(sp)  # Guarda os valores a ser alterados em initializeSeed
+    sw a7, 8(sp)  # Guarda os valores a ser alterados em initializeSeed
+    sw a1, 12(sp) #este ? alterado pela chamada ao sistema
     jal initializeSeed
     lw ra, 0(sp)  
     lw a0, 4(sp) 
-    lw t0, 8(sp)  # recupera todos os valores
-    addi sp, sp, 12  # Desaloca memoria na pilha
+    lw a7, 8(sp)  # recupera todos os valores
+    lw a1, 12(sp)
+    addi sp, sp, 16  # Desaloca memoria na pilha
     li t4, 33  # Define o limite superior para a gera??o pseudo-aleat?ria
     for_initializeCentroids:
         lw t1, 0(a0)  # Carrega o valor de X do centroid para t1
         lw t2, 4(a0)  # Carrega o valor de Y do centroid para t2
         mul t1, t1, t3
-        mul t2, t2, t3
-        rem t1, t1, t4  # Calcula o resto da divis?o entre o ciclo de clock e o limite superior
+        mul t2, t2, t3 #multiplica cada valor pela seed
+        rem t1, t1, t4  # Calcula o resto da divis?o pelo limite superior
         rem t2, t2, t4 #este resto ser? entre 0 e 31, portanto est? nos limites da LED matrix
         sw t1, 0(a0)  # Armazena o valor pseudo-aleat?rio no endere?o do centroid
         sw t2, 4(a0)
@@ -427,3 +451,4 @@ nearestCluster:
 mainKMeans:  
     # POR IMPLEMENTAR (2a parte)
     jr ra
+
