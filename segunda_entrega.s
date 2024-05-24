@@ -169,7 +169,11 @@ printClusters:
         la t2, colors # Endereco da lista das cores dos pontos e carregado para t2
         add t2, t2, t3 #novo indice
         lw a2, 0(t2) # Carrega a cor para a2
+        addi sp, sp, -4
+        sw a3, 0(sp) #guarda o valor de a3
         jal printPoint  # Chama a funcao printPoint para dar print dos pontos
+        lw a3, 0(sp) #recupera o a3
+        addi sp, sp, 4 #desaloca memoria
         addi t1, t1, 4 # Avanca para o ponto seguinte
         addi t0, t0, -1 # Menos um ponto
         addi a3, a3, 4 # Avanca para o identificador de cluster seguinte
@@ -221,7 +225,7 @@ calculateCentroids:
         div t1, t1, t3 # (media de Y)
         sw t1, 4(a3) # guarda na coordenada Y do centroid
         addi a3, a3, -8 #Centroid anterior
-        bgt t4, x0, for_cada_Cluster #quando o indice é zero, para
+        bgt t4, x0, for_cada_Cluster #quando o indice ? zero, para
         jr ra #retorna
         
     
@@ -245,7 +249,7 @@ calculateCentroids:
         li t1, 0 #soma Y
         mv t2, a0
         li t3, 0 #este registo ira guardar o numero de pontos que pertencem a um mesmo cluster
-        la a2, clusters #endereço do vetor de clusters
+        la a2, clusters #endere?o do vetor de clusters
         for_calcula_centroid: #loop para calcular os centroides
             lw t5, 0(a2) #guarda o identificador do primeiro ponto do vetor clusters
             beq t4, t5, adiciona_ponto
@@ -369,8 +373,6 @@ initializeCentroids:
         bgtz t0, for_initializeCentroids  # Continua o loop se ainda houver centroids
     jr ra
 
-
-
 ### manhattanDistance
 # Calcula a distancia de Manhattan entre (x0,y0) e (x1,y1)
 # Argumentos:
@@ -441,6 +443,40 @@ nearestCluster:
             lw ra, 0(sp) #recupera o endere?o de retorno
             addi sp, sp, 4 #desaloca memoria na pilha
             jr ra #volta ao ponto de chamada
+
+
+### assignClusters
+# Por cada ponto do vetor points determina o indice do cluster mais proximo
+assignClusters:
+la a2, points #carrega o endere?o dos pontos
+la a3, clusters #carrega o endere?o dos clusters
+lw t1, n_points #numero de pontos
+addi sp, sp, -4
+sw ra, 0(sp) #guarda o endere?o de retorno
+for_assignCluster:
+    lw a0, 0(a2)
+    lw a1, 4(a2) #carrega as coordenadas do ponto
+    addi sp, sp, -16
+    sw a5, 0(sp) #guarda o endere?o de centroids
+    sw a2, 4(sp) #guarda o endere?o de points
+    sw a3, 8(sp) #guarda o endere?o de clusters
+    sw t1, 12(sp) #guarda o t1 que é alterado na funcao nearestCluster
+    jal nearestCluster #chama a funcao auxiliar
+    lw t1, 12(sp)
+    lw a3, 8(sp)
+    lw a2, 4(sp) #recupera todos os dados guardados na pilha
+    lw a5, 0(sp)
+    addi sp, sp, 16 #desaloca memoria
+    sw a0, 0(a3) 
+    addi a3, a3, 4 #proximo lugar no vetor clusters
+    addi a2, a2, 8 #proximo ponto
+    addi t1, t1, -1 #já foi visto um ponto
+    bgtz t1, for_assignCluster #continua o ciclo se ainda existem pontos
+    lw ra, 0(sp) #recupera o endere?o de retorno
+    addi sp, sp, 4 #desaloca memoria
+    jr ra #retorna
+
+
 
 
 ### mainKMeans
