@@ -181,6 +181,10 @@ printClusters:
         lw ra, 0(sp) #restaura o valor do endere?o de retorno
         addi sp, sp, 4 #fecha a pilha
     jr ra
+    ###OPTIMIZATION
+    #A função da primeira entrega foi adaptada de forma a que faça print de cada ponto
+    #utilizando diretamente o identificador do cluster como endereço de cor
+    #sendo preciso chamar a função uma unica vez por iteração
 
 
 ### printCentroids
@@ -258,7 +262,11 @@ calculateCentroids:
             addi t2, t2, -1 # menos um ponto
             bgt t2, x0, for_calcula_centroid # Se ainda houver pontos por calucular continua o ciclo
             j final_calcula_Centroids
-
+        ###OPTIMIZATION
+        #Adaptação da função da primeira entrega que faz o calculo de cada
+        #centroide dependendo dos pontos associados ao mesmo,
+        #não sendo necessaria a chamada da função trees vexes por cada cluster
+        
 
 ### mainSingleCluster
 # Funcao principal da 1a parte do projeto.
@@ -475,7 +483,66 @@ for_assignCluster:
     lw ra, 0(sp) #recupera o endere?o de retorno
     addi sp, sp, 4 #desaloca memoria
     jr ra #retorna
+    ####OPTIMIZATION
+    #função que determina o centroide mais perto de um ponto e 
+    #o identifica automaticamente no vetor clusters, de forma
+    # a ser necessaria a chamada de uma unica função para identificar
+    #a que cluster pertence cada ponto
 
+### copy_Centroids
+###Esta funcao copia os centoides atuais para o vetor de ultimos centroides
+copyCentroids:
+la a3, clusters #carrega o endere?o do vetor clusters
+la a4, ultimo_centroid #carrega o endere?o do vetor ultimo centroid
+lw t0, k #carrega o valor de k
+for_copyCentroids:
+    lw t1, 0(a3) #X centroid atual
+    lw t2, 4(a3) #Y centroid atual
+    sw t1, 0(a4)
+    sw t2, 4(a4) #copia as coordenadas para o vetor de ultimos centroides
+    addi a3, a3, 8 #avan?a para o proximo centroid
+    addi a4, a4, 8 #avan?a para o proximo centroid dos anteriores
+    addi t0, t0, -1 #menos um centroid
+    bgt t0, x0, for_copyCentroids #continua o ciclo
+    jr ra #retorna ao ponto de chamada
+    ###OPTIMIZATION
+    #Caso existam mudanças nos valores dos centroides, será necessaria
+    #outra iteração. Esta função auxiliar permite à função de verificação
+    #(verifyChanges) tambem guardar os novos centroides calculados
+
+### verifyChanges
+#Verifica se os clusters mudaram em relaça?o ao ciclo anterior
+###Retorno: a0=1 se houve mudanças, a0=0 caso contrário
+verifyChanges:
+    la a3, clusters #carrega o endere?o do vetor clusters
+    la a4, ultimo_centroid #carrega o endere?o do vetor ultimo centroid
+    lw t0, k #carrega o valor de k
+    addi sp, sp, -4
+    sw ra, 0(sp) #guarda o endere?o de retorno
+    for_verifyChanges:
+        lw t1, 0(a3) #X centroid atual
+        lw t2, 0(a4) #X centroid anterior
+        lw t3, 4(a3) #Y centroid atual
+        lw t4, 4(a4) #Y centroid anterior
+        bne t1, t2, has_changed #houve mudança
+        bne t3, t4, has_changed #houve mudança
+        addi a3, a3, 8 #avan?a para o proximo centroid
+        addi a4, a4, 8 #avan?a para o proximo centroid dos anteriores
+        addi t0, t0, -1 #menos um centroid
+        bgt t0, x0, for_verifyChanges #continua o ciclo
+        li a0, 0 #caso n?o haja mudan?as, a0 fica com o valor 0
+        #o valor 0 indicara "falso", isto é, que n?o houve mudan?as
+        lw ra, 0(sp) #recupera o endere?o de retorno
+        addi sp, sp, 4 #desaloca memoria
+        jr ra #retorna ao ponto de chamada
+
+
+        has_changed:
+            li a0, 1 #caso haja mudan?as, a0 fica com o valor 1
+            jal copyCentroids #chama a funcao auxiliar
+            lw ra, 0(sp) #recupera o endere?o de retorno
+            addi sp, sp, 4 #desaloca memoria
+            jr ra #retorna ao ponto de chamada
 
 
 
