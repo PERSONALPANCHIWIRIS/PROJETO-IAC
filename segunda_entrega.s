@@ -33,14 +33,16 @@
 #points:     .word 4,2, 5,1, 5,2, 5,3 6,2
 
 #Input C
-n_points:    .word 23
-points: .word 0,0, 0,1, 0,2, 1,0, 1,1, 1,2, 1,3, 2,0, 2,1, 5,3, 6,2, 6,3, 6,4, 7,2, 7,3, 6,8, 6,9, 7,8, 8,7, 8,8, 8,9, 9,7, 9,8
+#n_points:    .word 23
+#points: .word 0,0, 0,1, 0,2, 1,0, 1,1, 1,2, 1,3, 2,0, 2,1, 5,3, 6,2, 6,3, 6,4, 7,2, 7,3, 6,8, 6,9, 7,8, 8,7, 8,8, 8,9, 9,7, 9,8
 
 #Input D
 #n_points:    .word 30
 #points:      .word 16, 1, 17, 2, 18, 6, 20, 3, 21, 1, 17, 4, 21, 7, 16, 4, 21, 6, 19, 6, 4, 24, 6, 24, 8, 23, 6, 26, 6, 26, 6, 23, 8, 25, 7, 26, 7, 20, 4, 21, 4, 10, 2, 10, 3, 11, 2, 12, 4, 13, 4, 9, 4, 9, 3, 8, 0, 10, 4, 10
 
-
+#Input Test
+n_points: .word 12
+points: .word 0,0, 0,1, 0,2, 0,3, 1,3, 2,3, 12,12, 13,13, 31,30, 30,31, 30,30, 31,31  
 
 # Valores de centroids e k a usar na 1a parte do projeto:
 #centroids:   .word 0,0
@@ -128,8 +130,8 @@ mudar_k:
 
 cleanScreen:
     li t0, 33 #fora do limite
-    li t1, 0 #
-    lw a2, white #guarda a cor branca em a2
+    li t1, 0 
+    li a2, white #guarda a cor branca em a2
     addi sp, sp, -4 #aloca espaco na pilha
     sw ra, 0(sp) #guarda o registo de retorno
     ciclo1:
@@ -141,7 +143,7 @@ cleanScreen:
         jal printPoint
         addi t2, t2, 1 #itera para a seguinte linha
         bne t2, t0, ciclo2 #limpa os pontos numa coluna
-        addi t1, t1, 1 #j? foi uma coluna "apagada"
+        addi t1, t1, 1 #ja foi uma coluna "apagada"
         bne t1, t0, ciclo1 #itera para a proxima coluna
 
     lw ra, 0(sp)
@@ -194,17 +196,16 @@ printClusters:
 # Retorno: nenhum
 
 printCentroids:
-    li t0, 3 #numero de centroids
+    lw t0, k #numero de centroids
     la t1, centroids # Coloca o array de centroides em t1
     lw a2, black # Carrega preto para a2
     addi sp, sp, -4 #aloca espa?o
     sw ra, 0(sp) #guarda o endereco de retorno
     for_centroids:
         lw a0, 0(t1) #X
-        addi t1, t1, 4 # Avanca para a posicao seguinte na lista
-        lw a1, 0(t1) #Y
+        lw a1, 4(t1) #Y
         jal printPoint #chama a funcao auxiliar 
-        addi t1, t1, 4 # Avanca para o centroide seguinte
+        addi t1, t1, 8 # Avanca para o centroide seguinte
         addi t0, t0, -1  # Retira 1 a contagem de centroides
         bgt t0, x0, for_centroids #continua o ciclo
         lw ra, 0(sp) #restaura o endereco de retorno
@@ -370,10 +371,12 @@ initializeCentroids:
     for_initializeCentroids:
         lw t1, 0(a0)  # Carrega o valor de X do centroid para t1
         lw t2, 4(a0)  # Carrega o valor de Y do centroid para t2
-        mul t1, t1, t3
-        mul t2, t2, t3 #multiplica cada valor pela seed
-        rem t1, t1, t4  # Calcula o resto da divis?o pelo limite superior
-        rem t2, t2, t4 #este resto ser? entre 0 e 31, portanto est? nos limites da LED matrix
+        add t1, t1, t3                            
+        add t2, t2, t3 #adiciona cada valor com a seed
+        mul t1, t1, t0
+        mul t2, t2, t0 #multiplica cada ponto com o contador
+        remu t1, t1, t4  # Calcula o resto da divis?o pelo limite superior
+        remu t2, t2, t4 #este resto ser? entre 0 e 31, portanto est? nos limites da LED matrix
         sw t1, 0(a0)  # Armazena o valor pseudo-aleat?rio no endere?o do centroid
         sw t2, 4(a0)
         addi a0, a0, 8  # Avan?a para o pr?ximo centroid
@@ -492,7 +495,7 @@ for_assignCluster:
 ### copy_Centroids
 ###Esta funcao copia os centoides atuais para o vetor de ultimos centroides
 copyCentroids:
-la a3, clusters #carrega o endere?o do vetor clusters
+la a3, centroids #carrega o endere?o do vetor clusters
 la a4, ultimo_centroid #carrega o endere?o do vetor ultimo centroid
 lw t0, k #carrega o valor de k
 for_copyCentroids:
@@ -514,7 +517,7 @@ for_copyCentroids:
 #Verifica se os clusters mudaram em relaça?o ao ciclo anterior
 ###Retorno: a0=1 se houve mudanças, a0=0 caso contrário
 verifyChanges:
-    la a3, clusters #carrega o endere?o do vetor clusters
+    la a3, centroids #carrega o endere?o do vetor clusters
     la a4, ultimo_centroid #carrega o endere?o do vetor ultimo centroid
     lw t0, k #carrega o valor de k
     addi sp, sp, -4
@@ -552,6 +555,105 @@ verifyChanges:
 # Retorno: nenhum
 
 mainKMeans:  
-    # POR IMPLEMENTAR (2a parte)
+    lw t5, L #o contador de iterações
+    
+    #chama a função de inicialização
+    addi sp, sp, -8
+    sw ra, 0(sp)
+    sw a0, 4(sp)
+    jal initializeCentroids
+    lw a0, 4(sp)
+    lw ra, 0(sp)
+    addi sp, sp, 8
+    
+    for_KMeans:
+        beq t5, x0, end_KMeans #Cada ciclo verifica que ainda existem iterações
+        li a0, 0 #inicializa o identificador de mudancas com 0
+        
+        addi sp, sp, -16
+        sw ra, 0(sp)
+        sw a0, 4(sp)
+        sw a1, 8(sp)
+        sw a3, 12(sp)
+        jal cleanScreen
+        lw a3, 12(sp)
+        lw a1, 8(sp)
+        lw a0, 4(sp)
+        lw ra, 0(sp)
+        addi sp, sp, 16
+        
+        addi sp, sp, -20
+        sw ra, 0(sp)
+        sw a0, 4(sp)
+        sw a1, 8(sp)
+        sw a2, 12(sp)
+        sw a3, 16(sp)
+        jal assignClusters
+        lw a3, 16(sp)
+        lw a2, 12(sp)
+        lw a1, 8(sp)
+        lw a0, 4(sp)
+        lw ra, 0(sp)
+        addi sp, sp, 20
+        
+        addi sp, sp, -24
+        sw ra, 0(sp)
+        sw a0, 4(sp)
+        sw a1, 8(sp)
+        sw a2, 12(sp)
+        sw a3, 16(sp)
+        sw t5, 20(sp)
+        jal calculateCentroids
+        lw t5, 20(sp)
+        lw a3, 16(sp)
+        lw a2, 12(sp)
+        lw a1, 8(sp)
+        lw a0, 4(sp)
+        lw ra, 0(sp)
+        addi sp, sp, 24
+    
+        addi sp, sp, -20
+        sw ra, 0(sp)
+        sw a0, 4(sp)
+        sw a1, 8(sp)
+        sw a2, 12(sp)
+        sw a3, 16(sp)
+        jal printClusters
+        lw a3, 16(sp)
+        lw a2, 12(sp)
+        lw a1, 8(sp)
+        lw a0, 4(sp)
+        lw ra, 0(sp)
+        addi sp, sp, 20
+        
+        addi sp, sp, -20
+        sw ra, 0(sp)
+        sw a0, 4(sp)
+        sw a1, 8(sp)
+        sw a2, 12(sp)
+        sw a3, 16(sp)
+        jal printCentroids
+        lw a3, 16(sp)
+        lw a2, 12(sp)
+        lw a1, 8(sp)
+        lw a0, 4(sp)
+        lw ra, 0(sp)
+        addi sp, sp, 20
+        
+        addi sp, sp, -12
+        sw ra, 0(sp)
+        sw a3, 4(sp)
+        sw a4, 8(sp)
+        jal verifyChanges
+        lw a4, 8(sp)
+        lw a3, 4(sp)
+        lw ra, 0(sp)
+        addi sp, sp, 12
+        
+        addi t5, t5, -1
+        bne a0, x0, for_KMeans #Caso os centroids tenham mudado faz mais uma iteração
+        j end_KMeans #Os centroid não mudaram, termina   
+        
+    end_KMeans:
     jr ra
 
