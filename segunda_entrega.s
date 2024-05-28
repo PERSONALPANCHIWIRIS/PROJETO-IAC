@@ -41,29 +41,29 @@
 #points:      .word 16, 1, 17, 2, 18, 6, 20, 3, 21, 1, 17, 4, 21, 7, 16, 4, 21, 6, 19, 6, 4, 24, 6, 24, 8, 23, 6, 26, 6, 26, 6, 23, 8, 25, 7, 26, 7, 20, 4, 21, 4, 10, 2, 10, 3, 11, 2, 12, 4, 13, 4, 9, 4, 9, 3, 8, 0, 10, 4, 10
 
 #Input Test
-n_points: .word 12
-points: .word 0,0, 0,1, 0,2, 0,3, 1,3, 2,3, 12,12, 13,13, 31,30, 30,31, 30,30, 31,31  
+n_points: .word 14
+points: .word 0,0, 0,1, 0,2, 0,3, 1,3, 2,3, 12,12, 13,13, 31,30, 30,31, 30,30, 31,31, 0,31, 1,31
 
 # Valores de centroids e k a usar na 1a parte do projeto:
 #centroids:   .word 0,0
 #k:           .word 1
 
 # Valores de centroids, k e L a usar na 2a parte do prejeto:
-centroids:   .word 0,0, 10,0, 0,10
-k:           .word 3
+centroids:   .word 0,0, 10,0, 0,10, 10,10
+k:           .word 4
 L:           .word 10
 
 # Abaixo devem ser declarados o vetor clusters (2a parte) e outras estruturas de dados
 # que o grupo considere necessarias para a solucao:
 clusters: .zero 128  
-ultimo_centroid: .word 0,0 0,0 0,0
+ultimo_centroid: .word 0,0 0,0 0,0, 0,0
 
 
 
 
 #Definicoes de cores a usar no projeto 
 
-colors:      .word 0xff0000, 0x00ff00, 0x0000ff  # Cores dos pontos do cluster 0, 1, 2, etc.
+colors:      .word 0xff0000, 0x00ff00, 0x0000ff, 0xf0e68c # Cores dos pontos do cluster 0, 1, 2, etc.
 
 .equ         black      0
 .equ         white      0xffffff
@@ -198,7 +198,7 @@ printClusters:
 printCentroids:
     lw t0, k #numero de centroids
     la t1, centroids # Coloca o array de centroides em t1
-    lw a2, black # Carrega preto para a2
+    li a2, black # Carrega preto para a2
     addi sp, sp, -4 #aloca espa?o
     sw ra, 0(sp) #guarda o endereco de retorno
     for_centroids:
@@ -220,8 +220,10 @@ printCentroids:
 
 calculateCentroids:
     la a3, centroids #sera alterada na memoria a lista de centroids
-    addi a3, a3, 16 #o primeiro centroid a calcular vai ser o de indice 2
-    li t4, 3 #inicializamos t4 com o valor 3
+    lw t4, k #inicializamos t4 com o valor de k
+    addi t6, t4, -1
+    slli t6, t6, 3 #muktiplica 8(k-1) assim tirando o indice do ultimo centroid
+    add a3, a3, t6 #o primeiro centroid a calcular vai ser o ultimo
     j for_cada_Cluster
     
     final_calcula_Centroids:
@@ -419,8 +421,7 @@ nearestCluster:
     addi sp, sp, -4
     sw ra, 0(sp) #guarda o endere?o de retorno anterior
     li t1, 0 #t1 ir? guardar o indice da menor distancia
-    la t3, k #carrega o endere?o de k para t3
-    lw t2, 0(t3) #numero de centroids
+    lw t2, k #numero de centroids
     li t3, 0 #t3 funciona como o endere?o do centroid
     li t6, 70 #iniciliza t6 com uma distancia superior ? maior distancia possivel
     for_nearestC:
@@ -493,7 +494,7 @@ for_assignCluster:
     #a que cluster pertence cada ponto
 
 ### copy_Centroids
-###Esta funcao copia os centoides atuais para o vetor de ultimos centroides
+###Esta funcao copia os centroides atuais para o vetor de ultimos centroides
 copyCentroids:
 la a3, centroids #carrega o endere?o do vetor clusters
 la a4, ultimo_centroid #carrega o endere?o do vetor ultimo centroid
