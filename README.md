@@ -14,6 +14,8 @@ O algoritmo irá iterar até que os centroides não mudem mais ou até que o nú
 
 O código foi otimizado para reduzir o número de chamadas de funções e para garantir que as operações sejam realizadas de forma eficiente. Por exemplo:
 
-    A função printClusters foi adaptada para pintar cada ponto diretamente com base no identificador do cluster, reduzindo a necessidade de múltiplas chamadas.
+    A função printClusters foi adaptada para pintar cada ponto diretamente com base 
+    no identificador do cluster, reduzindo a necessidade de múltiplas chamadas.
 
-    A função calculateCentroids foi otimizada para calcular os centroides de forma mais eficiente, sem a necessidade de chamadas repetidas.
+    A função calculateCentroids foi otimizada para calcular os centroides de
+    forma mais eficiente, sem a necessidade de chamadas repetidas.
